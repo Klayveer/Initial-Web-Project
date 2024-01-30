@@ -1,5 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.utils.text import slugify
+
 
 class Tag(models.Model):
     name = models.CharField("Nome", max_length=50, unique=True)
@@ -15,11 +19,11 @@ class Topico(models.Model):
     titulo = models.CharField("Título", max_length=100)
     descricao = models.TextField("Descrição")
     data_criacao = models.DateTimeField("Criado", auto_now_add= True)
-    data_atualizacao = models.DateTimeField("Atualizado", auto_now_add= True)
+    data_atualizacao = models.DateTimeField("Atualizado", auto_now= True)
     usuario = models.ForeignKey(User, on_delete= models.CASCADE, verbose_name="Usuario")
     tag = models.ManyToManyField(Tag,verbose_name="Tags")
     visualizacao = models.IntegerField("Visualizações", default=0)
-    slug = models.SlugField()
+    slug = models.SlugField(unique=True, blank=True)
 
     def __str__(self):
          return self.titulo
@@ -44,3 +48,8 @@ class Post(models.Model):
     class Meta:
         verbose_name ="Post"
         verbose_name_plural ="Posts"
+
+@receiver(pre_save, sender=Topico)
+def criar_slug(sender, instance, **kwargs):
+    if not instance.slug:
+        instance.slug = slugify(instance.titulo)
